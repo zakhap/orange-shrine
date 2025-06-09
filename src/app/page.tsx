@@ -1,103 +1,75 @@
-import Image from "next/image";
+// @ts-expect-error - are.na package doesn't have TypeScript declarations
+import Arena from 'are.na';
+import ExperimentalList from './components/ExperimentalList';
 
-export default function Home() {
+interface ArenaBlock {
+  id: number;
+  title: string;
+  image?: {
+    large: {
+      url: string;
+    };
+  };
+  content?: string;
+  class: string;
+  created_at: string;
+  connections?: ArenaBlock[];
+}
+
+interface ArenaChannel {
+  contents: ArenaBlock[];
+}
+
+async function getOrangePosts(): Promise<ArenaBlock[]> {
+  try {
+    const arena = new Arena();
+    const channel = await arena.channel('orange-space').get({ per: 100 }) as ArenaChannel;
+    
+    // Filter for image blocks and sort by creation date (newest first)
+    return channel.contents
+      .filter(block => block.class === 'Image' && block.image)
+      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+  } catch (error) {
+    console.error('Error fetching Are.na data:', error);
+    return [];
+  }
+}
+
+export default async function Home() {
+  const posts = await getOrangePosts();
+
   return (
-    <div className="grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20 font-[family-name:var(--font-geist-sans)]">
-      <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol className="list-inside list-decimal text-sm/6 text-center sm:text-left font-[family-name:var(--font-geist-mono)]">
-          <li className="mb-2 tracking-[-.01em]">
-            Get started by editing{" "}
-            <code className="bg-black/[.05] dark:bg-white/[.06] px-1 py-0.5 rounded font-[family-name:var(--font-geist-mono)] font-semibold">
-              src/app/page.tsx
-            </code>
-            .
-          </li>
-          <li className="tracking-[-.01em]">
-            Save and see your changes instantly.
-          </li>
-        </ol>
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="text-center py-8 border-b-2 border-black">
+        <h1 className="text-4xl font-bold font-mono">ORANGE SPACE</h1>
+        <p className="text-lg mt-2 font-mono">A shrine to Orange the cat</p>
+      </header>
 
-        <div className="flex gap-4 items-center flex-col sm:flex-row">
-          <a
-            className="rounded-full border border-solid border-transparent transition-colors flex items-center justify-center bg-foreground text-background gap-2 hover:bg-[#383838] dark:hover:bg-[#ccc] font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 sm:w-auto"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            className="rounded-full border border-solid border-black/[.08] dark:border-white/[.145] transition-colors flex items-center justify-center hover:bg-[#f2f2f2] dark:hover:bg-[#1a1a1a] hover:border-transparent font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5 w-full sm:w-auto md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read our docs
-          </a>
-        </div>
+      {/* Experimental List */}
+      <main className="max-w-2xl mx-auto p-8">
+        <ExperimentalList posts={posts} />
+
+        {posts.length === 0 && (
+          <div className="text-center py-16">
+            <p className="text-xl font-mono">No Orange photos found yet!</p>
+          </div>
+        )}
       </main>
-      <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          className="flex items-center gap-2 hover:underline hover:underline-offset-4"
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
+
+      {/* Footer */}
+      <footer className="text-center py-8 border-t-2 border-black mt-16">
+        <p className="font-mono text-sm">
+          Powered by{' '}
+          <a href="https://are.na/orange-space" className="underline" target="_blank" rel="noopener noreferrer">
+            Are.na
+          </a>
+        </p>
       </footer>
     </div>
   );
 }
+
+
+// Enable ISR - revalidate every hour
+export const revalidate = 3600;
