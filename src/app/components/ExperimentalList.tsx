@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { FixedSizeList as List } from 'react-window';
 
 interface ArenaBlock {
   id: number;
@@ -40,7 +39,7 @@ export default function ExperimentalList({ posts }: { posts: ArenaBlock[] }) {
   const [loadedImages, setLoadedImages] = useState<Set<string>>(new Set());
   const trailIdRef = useRef(0);
   const stickerIdRef = useRef(0);
-  const listRef = useRef<List>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const lastStickerTimeRef = useRef(0);
 
   // Cursor trail and sticker effect
@@ -106,7 +105,10 @@ export default function ExperimentalList({ posts }: { posts: ArenaBlock[] }) {
         e.preventDefault();
         const newIndex = Math.min(selectedIndex + 1, posts.length - 1);
         setSelectedIndex(newIndex);
-        listRef.current?.scrollToItem(newIndex);
+        
+        // Scroll to selected item
+        const selectedElement = containerRef.current?.children[newIndex] as HTMLElement;
+        selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
         // Update image if currently showing
         const post = posts[newIndex];
@@ -117,7 +119,10 @@ export default function ExperimentalList({ posts }: { posts: ArenaBlock[] }) {
         e.preventDefault();
         const newIndex = Math.max(selectedIndex - 1, 0);
         setSelectedIndex(newIndex);
-        listRef.current?.scrollToItem(newIndex);
+        
+        // Scroll to selected item
+        const selectedElement = containerRef.current?.children[newIndex] as HTMLElement;
+        selectedElement?.scrollIntoView({ behavior: 'smooth', block: 'center' });
         
         // Update image if currently showing
         const post = posts[newIndex];
@@ -173,49 +178,6 @@ export default function ExperimentalList({ posts }: { posts: ArenaBlock[] }) {
     });
   }, [posts, preloadImage]);
 
-  // List item component for virtual scrolling
-  const ListItem = useCallback(({ index, style }: { index: number; style: React.CSSProperties }) => {
-    const post = posts[index];
-    const isSelected = index === selectedIndex;
-
-    return (
-      <div
-        style={style}
-        className={`border-b border-black py-2 cursor-pointer transition-colors font-mono ${
-          isSelected ? 'bg-yellow-200' : 'hover:bg-yellow-100 active:bg-yellow-100'
-        }`}
-        onMouseEnter={() => {
-          setSelectedIndex(index);
-          if (post.image) setHoveredImage(post.image.large.url);
-        }}
-        onMouseLeave={() => setHoveredImage(null)}
-        onTouchStart={() => {
-          setSelectedIndex(index);
-          if (post.image) setHoveredImage(post.image.large.url);
-        }}
-        onTouchEnd={() => setHoveredImage(null)}
-      >
-        <div className="flex justify-between items-center text-sm sm:text-base px-4">
-          <span className="flex-1 truncate font-bold">
-            {post.title || `[untitled-${post.id}]`}
-          </span>
-          <div className="flex items-center ml-4 shrink-0">
-            <time className="text-black">
-              {new Date(post.created_at).toLocaleDateString('en-US', {
-                year: 'numeric',
-                month: '2-digit',
-                day: '2-digit'
-              })} {new Date(post.created_at).toLocaleTimeString('en-US', {
-                hour: '2-digit',
-                minute: '2-digit',
-                hour12: false
-              })}
-            </time>
-          </div>
-        </div>
-      </div>
-    );
-  }, [posts, selectedIndex, preloadImage]);
 
   if (isFullscreen && hoveredImage) {
     return (
@@ -301,17 +263,50 @@ export default function ExperimentalList({ posts }: { posts: ArenaBlock[] }) {
         </button>
       </div>
 
-      {/* Virtual List */}
-      <List
-        ref={listRef}
-        height={600}
-        width="100%"
-        itemCount={posts.length}
-        itemSize={50}
-        itemData={posts}
-      >
-        {ListItem}
-      </List>
+      {/* Full List */}
+      <div ref={containerRef} className="space-y-0">
+        {posts.map((post, index) => {
+          const isSelected = index === selectedIndex;
+          
+          return (
+            <div
+              key={post.id}
+              className={`border-b border-black py-2 cursor-pointer transition-colors font-mono ${
+                isSelected ? 'bg-yellow-200' : 'hover:bg-yellow-100 active:bg-yellow-100'
+              }`}
+              onMouseEnter={() => {
+                setSelectedIndex(index);
+                if (post.image) setHoveredImage(post.image.large.url);
+              }}
+              onMouseLeave={() => setHoveredImage(null)}
+              onTouchStart={() => {
+                setSelectedIndex(index);
+                if (post.image) setHoveredImage(post.image.large.url);
+              }}
+              onTouchEnd={() => setHoveredImage(null)}
+            >
+              <div className="flex justify-between items-center text-sm sm:text-base px-4">
+                <span className="flex-1 truncate font-bold">
+                  {post.title || `[untitled-${post.id}]`}
+                </span>
+                <div className="flex items-center ml-4 shrink-0">
+                  <time className="text-black">
+                    {new Date(post.created_at).toLocaleDateString('en-US', {
+                      year: 'numeric',
+                      month: '2-digit',
+                      day: '2-digit'
+                    })} {new Date(post.created_at).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: false
+                    })}
+                  </time>
+                </div>
+              </div>
+            </div>
+          );
+        })}
+      </div>
 
       {/* Image Overlay */}
       {hoveredImage && !isFullscreen && (
