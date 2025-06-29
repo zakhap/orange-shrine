@@ -314,7 +314,7 @@ export default function ExperimentalList({ posts }: { posts: ArenaBlock[] }) {
           <img
             src={hoveredImage}
             alt="Orange"
-            className="w-[80vw] h-[60vh] sm:w-[50vw] sm:h-[50vh] object-cover"
+            className="max-w-[80vw] max-h-[60vh] sm:max-w-[50vw] sm:max-h-[50vh] object-contain"
             style={{ boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.8)' }}
           />
         </div>
